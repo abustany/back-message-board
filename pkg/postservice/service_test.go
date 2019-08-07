@@ -135,7 +135,7 @@ func testAddInvalid(t *testing.T, service postservice.Service) {
 	})
 }
 
-func listPosts(t *testing.T, service postservice.Service, expectedNumber int, fatal bool) []types.Post {
+func listPosts(t *testing.T, service postservice.Service, expectedNumber int) []types.Post {
 	posts, cursor, err := service.List("", 100)
 
 	if err != nil {
@@ -147,11 +147,7 @@ func listPosts(t *testing.T, service postservice.Service, expectedNumber int, fa
 	}
 
 	if len(posts) != expectedNumber {
-		if fatal {
-			t.Fatalf("Unexpected number of posts, got %d, expected %d", len(posts), expectedNumber)
-		} else {
-			t.Errorf("Unexpected number of posts, got %d, expected %d", len(posts), expectedNumber)
-		}
+		t.Fatalf("Unexpected number of posts, got %d, expected %d", len(posts), expectedNumber)
 		return nil
 	}
 
@@ -171,28 +167,27 @@ func testAdd(t *testing.T, service postservice.Service) {
 		t.Errorf("Add returned an error: %s", err)
 	}
 
-	if posts := listPosts(t, service, 1, false); posts != nil {
-		saved := posts[0]
+	posts := listPosts(t, service, 1)
+	saved := posts[0]
 
-		if saved.ID == post.ID {
-			t.Errorf("Provided ID should have been ignored")
-		}
+	if saved.ID == post.ID {
+		t.Errorf("Provided ID should have been ignored")
+	}
 
-		if saved.Created == post.Created {
-			t.Errorf("Provided Created should have been ignored")
-		}
+	if saved.Created == post.Created {
+		t.Errorf("Provided Created should have been ignored")
+	}
 
-		if saved.Author != post.Author {
-			t.Errorf("Unexpected author, got %s, expected %s", saved.Author, post.Author)
-		}
+	if saved.Author != post.Author {
+		t.Errorf("Unexpected author, got %s, expected %s", saved.Author, post.Author)
+	}
 
-		if saved.Email != post.Email {
-			t.Errorf("Unexpected email, got %s, expected %s", saved.Email, post.Email)
-		}
+	if saved.Email != post.Email {
+		t.Errorf("Unexpected email, got %s, expected %s", saved.Email, post.Email)
+	}
 
-		if saved.Message != post.Message {
-			t.Errorf("Unexpected message, got %s, expected %s", saved.Message, post.Message)
-		}
+	if saved.Message != post.Message {
+		t.Errorf("Unexpected message, got %s, expected %s", saved.Message, post.Message)
 	}
 }
 
@@ -224,7 +219,7 @@ func testUpdate(t *testing.T, service postservice.Service) {
 		t.Fatalf("Add returned an error: %s", err)
 	}
 
-	posts := listPosts(t, service, 1, true)
+	posts := listPosts(t, service, 1)
 	post.ID = posts[0].ID
 	post.Created = posts[0].Created
 
@@ -238,7 +233,7 @@ func testUpdate(t *testing.T, service postservice.Service) {
 			t.Errorf("Update returned an error: %s", err)
 		}
 
-		posts := listPosts(t, service, 1, true)
+		posts := listPosts(t, service, 1)
 
 		if !posts[0].Equal(post) {
 			t.Errorf("Update didn't update: got %+v, expected %+v", posts[0], post)
@@ -257,7 +252,7 @@ func testUpdate(t *testing.T, service postservice.Service) {
 			t.Errorf("Update returned an error: %s", err)
 		}
 
-		posts := listPosts(t, service, 1, true)
+		posts := listPosts(t, service, 1)
 
 		if !posts[0].Equal(post) {
 			t.Errorf("Partial update didn't update: got %+v, expected %+v", posts[0], post)
