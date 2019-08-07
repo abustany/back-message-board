@@ -100,6 +100,7 @@ func (e *HttpEndpoint) handleList(w http.ResponseWriter, r *http.Request) {
 		Next:  next,
 	}
 
+	w.Header().Set("Content-Type", JsonContentType)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
 }
@@ -125,6 +126,7 @@ func (e *HttpEndpoint) handleGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-Type", JsonContentType)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(&post)
 }
