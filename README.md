@@ -14,6 +14,19 @@ Run `make` to compile the server, called `server`.
 
 Run `make test` to run the tests.
 
+## Loading data at startup
+
+The `-loadCSV` command line flag allows populating the messages from a CSV file
+on startup. The CSV records in the file should have five fields:
+
+- ID: unique ID of that message
+- Name: name of the message author
+- Email: email of the message author
+- Message: contents of the message
+- Created: creation date of the message, in RFC3339 format
+
+The first record in the CSV file is considered as a header, and is skipped.
+
 ## Docker image
 
 The repository provides a Dockerfile for the server, the resulting Docker image
@@ -24,6 +37,20 @@ uses the following environment variables to configure itself:
   user. If not set, a password will be auto generated on each start, and printed
   on the console.
 - `LOAD_CSV`: If provided, path to a CSV file that should be loaded on startup.
+
+For example, if you have a file `/tmp/messages.csv` with some data, and want to
+have an admin user called `admin` with a password `s3cr3t`, you would run:
+
+```
+docker build -t back-message-board:latest .
+
+docker run \
+  -e ADMIN_USER=admin \
+  -e ADMIN_PASSWORD=s3cr3t \
+  -e LOAD_CSV=/tmp/messages.csv \
+  -v /tmp/messages.csv:/tmp/messages.csv \
+  back-message-board:latest
+```
 
 ## Limitations
 
