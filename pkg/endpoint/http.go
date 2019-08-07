@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/abustany/back-message-board/pkg/postservice"
+	"github.com/abustany/back-message-board/pkg/poststore"
 	"github.com/abustany/back-message-board/pkg/types"
 )
 
@@ -47,6 +48,7 @@ func NewHttpEndpoint(logger log.Logger, service postservice.Service, adminUsers 
 		return WithLogging(logger, WithAuthentication(&authenticator, handler))
 	}
 
+	adminRouter.Methods("GET").Path("/posts/{id}").Handler(adminHandler(http.HandlerFunc(endpoint.handleGet)))
 	adminRouter.Methods("GET").Path("/posts").Handler(adminHandler(http.HandlerFunc(endpoint.handleList)))
 	adminRouter.Methods("POST").Path("/posts").Handler(adminHandler(WithPost(endpoint.handleEdit)))
 
@@ -98,6 +100,31 @@ func (e *HttpEndpoint) handleList(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
+}
+
+func (e *HttpEndpoint) handleGet(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	postId := vars["id"]
+
+	if postId == "" {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	post, err := e.service.Get(postId)
+
+	if postservice.UserError(err) == poststore.ErrIDNotFound {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	if err != nil {
+		WriteError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(&post)
 }
 
 func (e *HttpEndpoint) handleEdit(post types.Post) (int, error) {

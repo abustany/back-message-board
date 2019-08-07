@@ -51,6 +51,7 @@ func TestEndpoint(t *testing.T) {
 	t.Run("Update", withUrl(testUpdate))
 	t.Run("List (authentication)", withUrl(testListAuthentication))
 	t.Run("List", withUrl(testList))
+	t.Run("Get", withUrl(testGet))
 }
 
 func testAddInvalidJson(t *testing.T, url string) {
@@ -263,5 +264,63 @@ func testList(t *testing.T, url string) {
 
 	if cursor != "" {
 		t.Errorf("List returned a non empty cursor at the end of the list")
+	}
+}
+
+func getPost(t *testing.T, serverUrl, id string) *types.Post {
+	req, err := http.NewRequest("GET", serverUrl+"/admin/posts/"+id, nil)
+
+	if err != nil {
+		t.Fatalf("Error while creating request: %s", err)
+	}
+
+	req.SetBasicAuth(adminUser, adminPassword)
+
+	res, err := http.DefaultClient.Do(req)
+
+	if err != nil {
+		t.Fatalf("Error while sending request: %s", err)
+	}
+
+	defer res.Body.Close()
+
+	if res.StatusCode == http.StatusNotFound {
+		return nil
+	}
+
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("Unexpected status code for list response: %d", res.StatusCode)
+	}
+
+	var post types.Post
+
+	if err := json.NewDecoder(res.Body).Decode(&post); err != nil {
+		t.Fatalf("Decoding post response failed: %s", err)
+	}
+
+	return &post
+}
+
+func testGet(t *testing.T, url string) {
+	if fetched := getPost(t, url, "not-exist"); fetched != nil {
+		t.Errorf("Get on a non existing post did not return a 404")
+	}
+
+	post := types.Post{
+		Author:  "John",
+		Email:   "john@domain.com",
+		Message: "this is my message",
+	}
+
+	postPost(t, url+"/post", post, true, http.StatusCreated)
+
+	posts := listPosts(t, url, 1)
+	post.ID = posts[0].ID
+	post.Created = posts[0].Created
+
+	if fetched := getPost(t, url, post.ID); fetched == nil {
+		t.Errorf("Get returned a 404 on a existing post ID")
+	} else if !fetched.Equal(post) {
+		t.Errorf("Get returned an unexpected post: got %+v, expected %+v", *fetched, post)
 	}
 }
