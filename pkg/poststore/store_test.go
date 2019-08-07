@@ -93,6 +93,14 @@ func testUpdate(t *testing.T, store poststore.Store) {
 	}
 
 	checkPosts(t, store, []types.Post{post})
+
+	post.Author = "Author3"
+
+	if err := store.Update(types.Post{ID: post.ID, Author: post.Author}); err != nil {
+		t.Errorf("Partial update returned an error when updating an existing post: %s", err)
+	}
+
+	checkPosts(t, store, []types.Post{post})
 }
 
 func testList(t *testing.T, store poststore.Store) {

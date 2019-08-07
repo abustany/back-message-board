@@ -70,7 +70,25 @@ func (s *memoryPostStore) Update(post types.Post) error {
 		return ErrIDNotFound
 	}
 
-	s.posts[post.ID] = post
+	existing := s.posts[post.ID]
+
+	if post.Author != "" {
+		existing.Author = post.Author
+	}
+
+	if post.Email != "" {
+		existing.Email = post.Email
+	}
+
+	if !post.Created.IsZero() {
+		existing.Created = post.Created
+	}
+
+	if post.Message != "" {
+		existing.Message = post.Message
+	}
+
+	s.posts[post.ID] = existing
 
 	if oldPost.Created != post.Created {
 		s.postsByDate.Remove(Cursor{ID: post.ID, Created: oldPost.Created})
