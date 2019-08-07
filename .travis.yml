@@ -1,0 +1,6 @@
+language: go
+go: "1.12.7"
+sudo: false
+install: true # prevent travis from running go get or anything like this
+script:
+  - env GO111MODULE=on make test
