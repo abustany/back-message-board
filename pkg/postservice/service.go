@@ -13,14 +13,26 @@ import (
 )
 
 type Service interface {
+	// Add adds a new post to the store.
 	Add(post types.Post) error
+
+	// Update updates an existing post (identified by its ID) in the store.
+	//
+	// Partial updates are supported by only setting the fields that should be
+	// updated in the post.
 	Update(post types.Post) error
+
+	// List returns the n most recent posts in the store, starting at the given
+	// cursor. If the cursor is an empty string, the first page is returned.
+	// n can be set to 0 to get the default page size.
 	List(cursor string, n uint) (posts []types.Post, nextCursor string, err error)
 }
 
 type postService struct {
 	store poststore.Store
 }
+
+const DefaultPageSize = 100
 
 const MaxAuthorLength = 256
 const MaxEmailLength = 256
@@ -125,6 +137,10 @@ func decodeCursor(cursor string) (poststore.Cursor, error) {
 func (s *postService) List(cursor string, n uint) ([]types.Post, string, error) {
 	if n > MaxPageSize {
 		return nil, "", ErrInvalidPageSize
+	}
+
+	if n == 0 {
+		n = DefaultPageSize
 	}
 
 	decodedCursor, err := decodeCursor(cursor)
