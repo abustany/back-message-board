@@ -52,6 +52,8 @@ func NewHttpEndpoint(logger log.Logger, service postservice.Service, adminUsers 
 	adminRouter.Methods("GET").Path("/posts").Handler(adminHandler(http.HandlerFunc(endpoint.handleList)))
 	adminRouter.Methods("POST").Path("/posts").Handler(adminHandler(WithPost(endpoint.handleEdit)))
 
+	endpoint.router.Methods("GET").Path("/health").Handler(WithLogging(logger, http.HandlerFunc(endpoint.handleHealth)))
+
 	return endpoint
 }
 
@@ -135,4 +137,8 @@ func (e *HttpEndpoint) handleEdit(post types.Post) (int, error) {
 	}
 
 	return http.StatusOK, nil
+}
+
+func (e *HttpEndpoint) handleHealth(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
 }
