@@ -4,6 +4,7 @@ import (
 	"flag"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/go-kit/kit/log"
 	"github.com/pkg/errors"
@@ -18,10 +19,33 @@ func die(logger log.Logger, err error) {
 	os.Exit(1)
 }
 
+func loadCSV(logger log.Logger, store poststore.Store, filename string) {
+	fd, err := os.Open(filename)
+
+	if err != nil {
+		die(logger, errors.Wrapf(err, "Error while opening %s", filename))
+	}
+
+	defer fd.Close()
+
+	var counter uint
+
+	defer func(start time.Time) {
+		logger.Log("event", "load_from_csv", "success", err == nil, "elapsed", time.Since(start), "n_records", counter)
+	}(time.Now())
+
+	counter, err = poststore.LoadFromCSV(store, fd, true)
+
+	if err != nil {
+		die(logger, errors.Wrap(err, "Error while loading data from CSV file"))
+	}
+}
+
 func main() {
 	listenAddress := flag.String("listen", "127.0.0.1:1412", "Address on which to start the HTTP server")
 	adminUser := flag.String("adminUser", "", "Username of the admin user")
 	adminPassword := flag.String("adminPassword", "", "Password of the admin user")
+	csvFile := flag.String("loadCSV", "", "Optional, path of a CSV to load into the store after starting. The first record is considered as a header and is skipped.")
 
 	flag.Parse()
 
@@ -32,6 +56,10 @@ func main() {
 
 	if err != nil {
 		die(mainLogger, errors.Wrap(err, "Error while creating post store"))
+	}
+
+	if *csvFile != "" {
+		loadCSV(mainLogger, store, *csvFile)
 	}
 
 	if *adminUser == "" {
