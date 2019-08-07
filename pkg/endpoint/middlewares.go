@@ -12,6 +12,7 @@ import (
 	"github.com/abustany/back-message-board/pkg/types"
 )
 
+// JsonContentType is the MIME type of JSON requests/responses
 const JsonContentType = "application/json"
 
 type capturingResponseWriter struct {
@@ -41,6 +42,9 @@ func (c *capturingResponseWriter) WriteHeader(statusCode int) {
 	c.w.WriteHeader(statusCode)
 }
 
+// WithLogging wraps a http.Handler, writing a log message to the given logger
+// at the end of each request with the URL, returned status code, elapsed time
+// etc.
 func WithLogging(logger log.Logger, handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		writer := capturingResponseWriter{w: w}
@@ -59,6 +63,8 @@ func WithLogging(logger log.Logger, handler http.Handler) http.Handler {
 	})
 }
 
+// WithContentType wraps a http.Handler, rejecting requests that don't have a
+// JSON content type.
 func WithContentType(contentType string, handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Content-Type") != JsonContentType {
@@ -70,6 +76,9 @@ func WithContentType(contentType string, handler http.Handler) http.Handler {
 	})
 }
 
+// WriteError write the given error to the ResponseWriter, using the
+// appropriate HTTP status code depending on whether the error is a user or an
+// internal error.
 func WriteError(w http.ResponseWriter, err error) {
 	if userError := postservice.UserError(err); userError != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -80,6 +89,9 @@ func WriteError(w http.ResponseWriter, err error) {
 	w.WriteHeader(http.StatusInternalServerError)
 }
 
+// WithPost adapts an http.Handler to a function handling an HTTP request where
+// the request body is a single types.Post object. The error returned by the
+// function is written back to the response using WriteError.
 func WithPost(do func(post types.Post) (int, error)) http.Handler {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		post := types.Post{}
@@ -102,10 +114,16 @@ func WithPost(do func(post types.Post) (int, error)) http.Handler {
 	return WithContentType(JsonContentType, http.HandlerFunc(handler))
 }
 
+// RequestAuthenticator is a common interface to all HTTP request authentication
+// functions.
 type RequestAuthenticator interface {
+	// Authenticate returns true if and only if the request has valid
+	// credentials.
 	Authenticate(r *http.Request) (bool, error)
 }
 
+// WithAuthentication wraps an http.Handler, rejecting requests that don't get a
+// valid result from the given authenticator.
 func WithAuthentication(authenticator RequestAuthenticator, handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ok, err := authenticator.Authenticate(r)
@@ -127,6 +145,9 @@ func WithAuthentication(authenticator RequestAuthenticator, handler http.Handler
 // BasicAuthenticator uses HTTP Basic Auth to authenticate requests
 type BasicAuthenticator struct {
 	// Users maps usernames to password
+	//
+	// Because BasicAuthenticator does not implement any locking, this map
+	// shouldn't be modified once the HTTP handler starts handling requests.
 	Users map[string]string
 }
 

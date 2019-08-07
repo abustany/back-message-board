@@ -1,3 +1,4 @@
+// Package endpoint implements an HTTP endpoint to the message board service
 package endpoint
 
 import (
@@ -15,19 +16,29 @@ import (
 	"github.com/abustany/back-message-board/pkg/types"
 )
 
+// HttpEndpoint exposes the functionality of postervice.Service over HTTP
 type HttpEndpoint struct {
 	router  *mux.Router
 	service postservice.Service
 }
 
+// ListResponse is the shape of List replies.
 type ListResponse struct {
+	// List of posts on that result page
 	Posts []types.Post `json:"posts"`
-	Next  string       `json:"next,omitempty"`
+	// Cursor to the next result page
+	Next string `json:"next,omitempty"`
 }
 
 // Type assertion
 var _ http.Handler = &HttpEndpoint{}
 
+// NewHttpEndpoint returns a new instance of HttpEndpoint backed by the given
+// service.
+//
+// HTTP requests will be logged to the given logger, and adminUsers will be used
+// to authenticate users accessing the admin API. It should be a map where keys
+// are usernames, and values the password for each username.
 func NewHttpEndpoint(logger log.Logger, service postservice.Service, adminUsers map[string]string) *HttpEndpoint {
 	endpoint := &HttpEndpoint{
 		router:  mux.NewRouter(),

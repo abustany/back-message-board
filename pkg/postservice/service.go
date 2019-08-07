@@ -1,3 +1,4 @@
+// Package postservice provides the business logic for the message board.
 package postservice
 
 import (
@@ -12,6 +13,7 @@ import (
 	"github.com/abustany/back-message-board/pkg/types"
 )
 
+// Service gathers the functions used to implement the message board service.
 type Service interface {
 	// Get gets a post from the store. If the ID does not exist in the store, an
 	// error is returned.
@@ -36,20 +38,42 @@ type postService struct {
 	store poststore.Store
 }
 
+// DefaultPageSize is the default page size used by Service.List, in case n = 0.
 const DefaultPageSize = 100
 
+// MaxAuthorLength is the maximum length of a post's Author field.
 const MaxAuthorLength = 256
+
+// MaxEmailLength is the maximum length of a post's Email field.
 const MaxEmailLength = 256
+
+// MaxMessageLength is the maximum length of a post's Message field.
 const MaxMessageLength = 2048
+
+// MaxPageSize is the maximum number of returned posts in a Store.List result page.
 const MaxPageSize = 100
 
+// ErrInvalidID is returned by Store.Update when given a post with en empty ID.
 var ErrInvalidID = &userError{errors.New("Invalid ID (should not be empty)")}
+
+// ErrInvalidAuthor is returned by Store.Add or Store.Update when given a post with an invalid author.
 var ErrInvalidAuthor = &userError{errors.Errorf("Invalid author (should not be empty or longer than %d characters)", MaxAuthorLength)}
+
+// ErrInvalidAuthor is returned by Store.Add or Store.Update when given a post with an invalid email.
 var ErrInvalidEmail = &userError{errors.Errorf("Invalid email (should not be empty or longer than %d characters)", MaxEmailLength)}
+
+// ErrInvalidAuthor is returned by Store.Add or Store.Update when given a post with an invalid message.
 var ErrInvalidMessage = &userError{errors.Errorf("Invalid message (should not be longer than %d characters)", MaxMessageLength)}
+
+// ErrInvalidCursor is returned by Store.List when given an invalid cursor.
+//
+// Cursors returned by the Store.List method are always valid.
 var ErrInvalidCursor = &userError{errors.New("Invalid cursor")}
+
+// ErrInvalidPageSize is returned by Store.List when given an invalid page size.
 var ErrInvalidPageSize = &userError{errors.Errorf("Invalid page size (should not be larger than %d)", MaxPageSize)}
 
+// New returns a new Service backed by the given store.
 func New(store poststore.Store) Service {
 	return &postService{store}
 }

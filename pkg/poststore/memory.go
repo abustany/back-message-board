@@ -39,6 +39,7 @@ func sortPostsByDateReverse(a, b interface{}) int {
 	return 0
 }
 
+// NewMemoryPostStore returns a non-persistent, in-memory implementation of Store.
 func NewMemoryPostStore() (Store, error) {
 	return &memoryPostStore{
 		posts:       map[string]types.Post{},

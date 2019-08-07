@@ -1,3 +1,4 @@
+// Server serves the REST API of the message board.
 package main
 
 import (
