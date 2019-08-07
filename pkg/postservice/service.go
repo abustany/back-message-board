@@ -13,6 +13,10 @@ import (
 )
 
 type Service interface {
+	// Get gets a post from the store. If the ID does not exist in the store, an
+	// error is returned.
+	Get(id string) (types.Post, error)
+
 	// Add adds a new post to the store.
 	Add(post types.Post) error
 
@@ -69,6 +73,16 @@ func validatePost(post types.Post, newPost bool) error {
 	}
 
 	return nil
+}
+
+func (s *postService) Get(id string) (types.Post, error) {
+	post, err := s.store.Get(id)
+
+	if err == poststore.ErrIDNotFound {
+		err = &userError{err}
+	}
+
+	return post, err
 }
 
 func (s *postService) Add(post types.Post) error {

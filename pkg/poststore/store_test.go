@@ -19,6 +19,7 @@ func testStore(t *testing.T, storeFactory func() poststore.Store) {
 	t.Run("Add", withStore(testAdd))
 	t.Run("Update", withStore(testUpdate))
 	t.Run("List", withStore(testList))
+	t.Run("Get", withStore(testGet))
 }
 
 func checkPosts(t *testing.T, store poststore.Store, expected []types.Post) {
@@ -227,4 +228,30 @@ func testList(t *testing.T, store poststore.Store) {
 			}
 		}
 	})
+}
+
+func testGet(t *testing.T, store poststore.Store) {
+	post := types.Post{
+		ID:      "ID",
+		Author:  "Author1",
+		Email:   "Email1",
+		Created: time.Now(),
+		Message: "Message1",
+	}
+
+	if _, err := store.Get(post.ID); err == nil {
+		t.Errorf("Get returned no error when getting a non existing ID")
+	} else if err != poststore.ErrIDNotFound {
+		t.Errorf("Get returned an unexpected error when getting a non existing ID: got %v, expected %v", err, poststore.ErrIDNotFound)
+	}
+
+	if err := store.Add(post); err != nil {
+		t.Fatalf("Add returned an error: %s", err)
+	}
+
+	if fetched, err := store.Get(post.ID); err != nil {
+		t.Errorf("Get on an existing ID returned an error: %s", err)
+	} else if !fetched.Equal(post) {
+		t.Errorf("Get returned an unexpected post: got %+v, expected %+v", fetched, post)
+	}
 }

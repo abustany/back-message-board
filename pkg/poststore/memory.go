@@ -46,6 +46,17 @@ func NewMemoryPostStore() (Store, error) {
 	}, nil
 }
 
+func (s *memoryPostStore) Get(id string) (types.Post, error) {
+	s.RLock()
+	defer s.RUnlock()
+
+	if post, exists := s.posts[id]; exists {
+		return post, nil
+	}
+
+	return types.Post{}, ErrIDNotFound
+}
+
 func (s *memoryPostStore) Add(post types.Post) error {
 	s.Lock()
 	defer s.Unlock()

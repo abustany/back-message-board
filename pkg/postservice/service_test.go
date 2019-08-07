@@ -34,6 +34,8 @@ func TestPostService(t *testing.T) {
 
 	t.Run("List (validation)", withService(testListValidation))
 	t.Run("List", withService(testList))
+
+	t.Run("Get", withService(testGet))
 }
 
 func repeatStringUntil(s string, sizeAtLeast int) string {
@@ -398,4 +400,35 @@ func testList(t *testing.T, service postservice.Service) {
 
 		listExpect(t, service, cursor, pageSize, nil, true)
 	})
+}
+
+func testGet(t *testing.T, service postservice.Service) {
+	post := types.Post{
+		Author:  validAuthor,
+		Email:   validEmail,
+		Message: validMessage,
+	}
+
+	if _, err := service.Get("does not exist"); err == nil {
+		t.Errorf("Get on a non existing ID returned no error")
+	} else if !postservice.IsUserError(err) {
+		t.Errorf("Get on a non existing ID should return a user error")
+	}
+
+	if err := service.Add(post); err != nil {
+		t.Fatalf("Add returned an error: %s", err)
+	}
+
+	posts := listPosts(t, service, 1)
+
+	if fetched, err := service.Get(posts[0].ID); err != nil {
+		t.Errorf("Get on an existing ID returned an error: %s", err)
+	} else {
+		post.ID = fetched.ID
+		post.Created = fetched.Created
+
+		if !post.Equal(fetched) {
+			t.Errorf("Get returned an unexpected post: got %+v, expected %+v", fetched, post)
+		}
+	}
 }

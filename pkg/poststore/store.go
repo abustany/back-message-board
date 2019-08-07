@@ -14,6 +14,10 @@ type Cursor struct {
 }
 
 type Store interface {
+	// Get retrieves a post by its ID. If the ID does not exist in the store,
+	// ErrIDNotFound is returned.
+	Get(id string) (types.Post, error)
+
 	// Add adds a post to the store. If a post with this ID already exists, it
 	// returns ErrIDAlreadyExists.
 	Add(post types.Post) error
